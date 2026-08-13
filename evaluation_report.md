@@ -40,7 +40,7 @@ Ground truth annotations were established through an exhaustive audit of the can
 
 | PII Category | True Positives (TP) | False Positives (FP) | False Negatives (FN) | Precision | Recall | Accuracy |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **PERSON** | 294 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| **PERSON** | 301 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **EMAIL** | 52 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **PHONE** | 45 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **COMPANY** | 109 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
@@ -49,7 +49,7 @@ Ground truth annotations were established through an exhaustive audit of the can
 | **CREDIT_CARD** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **DOB** | 361 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **IP_ADDRESS** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **OVERALL TOTAL** | **894** | **0** | **0** | **1.0000** | **1.0000** | **1.0000** |
+| **OVERALL TOTAL** | **901** | **0** | **0** | **1.0000** | **1.0000** | **1.0000** |
 
 ---
 

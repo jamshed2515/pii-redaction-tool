@@ -43,19 +43,27 @@ def detect_regex_pii(text):
                 )
             )
 
-    # Contact Person name detection
-    cp_pattern = re.compile(r'(?i)\bContact\s+Person\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)')
+    # Contact Person name detection with non-name token filtering
+    cp_pattern = re.compile(r'\bContact\s+Person\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})')
+    non_name_words = {"website", "sebi", "registration", "number", "tel", "telephone", "fax", "email", "cin", "din", "pan", "no", "officer", "director", "secretary", "manager"}
+
     for match in cp_pattern.finditer(text):
-        name_val = match.group(1).strip()
-        entities.append(
-            PIIEntity(
-                entity_type="PERSON",
-                value=name_val,
-                start=match.start(1),
-                end=match.end(1),
-                confidence=1.0
+        raw_val = match.group(1).strip()
+        words = raw_val.split()
+        clean_words = [w for w in words if w.lower() not in non_name_words]
+        if clean_words:
+            clean_name = " ".join(clean_words)
+            m_start = match.start(1)
+            m_end = m_start + len(clean_name)
+            entities.append(
+                PIIEntity(
+                    entity_type="PERSON",
+                    value=clean_name,
+                    start=m_start,
+                    end=m_end,
+                    confidence=1.0
+                )
             )
-        )
 
     entities.extend(detect_addresses(text))
     entities.extend(detect_phone_numbers(text))
