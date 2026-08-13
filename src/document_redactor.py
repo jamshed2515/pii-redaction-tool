@@ -570,6 +570,46 @@ def redact_document(
                 process_table_obj(t, clean_str, placeholder)
 
     # ========================================================
+    # CLEANUP REMAINING FRAGMENTS IN ADDRESS PARAGRAPHS
+    # ========================================================
+
+    def clean_address_paragraph_fragments(p):
+        if not p.text:
+            return
+        if "ADDRESS_" in p.text:
+            placeholders = re.findall(r'\b[A-Z]+_\d{3}\b', p.text)
+            if placeholders:
+                unique_placeholders = []
+                for ph in placeholders:
+                    if ph not in unique_placeholders:
+                        unique_placeholders.append(ph)
+
+                text_without_placeholders = re.sub(r'\b[A-Z]+_\d{3}\b', '', p.text)
+                cleaned_remnants = re.sub(r'[\s,.\-:\n\r]', '', text_without_placeholders)
+                if len(cleaned_remnants) > 0:
+                    new_p_text = ", ".join(unique_placeholders)
+                    replace_text_in_paragraph(p, [(0, len(p.text), new_p_text)])
+
+    for p in doc.paragraphs:
+        clean_address_paragraph_fragments(p)
+
+    for t in doc.tables:
+        def clean_table(tbl):
+            for r in tbl.rows:
+                for c in r.cells:
+                    for p in c.paragraphs:
+                        clean_address_paragraph_fragments(p)
+                    for n_t in c.tables:
+                        clean_table(n_t)
+        clean_table(t)
+
+    for s in doc.sections:
+        for p in s.header.paragraphs:
+            clean_address_paragraph_fragments(p)
+        for p in s.footer.paragraphs:
+            clean_address_paragraph_fragments(p)
+
+    # ========================================================
     # SAVE
     # ========================================================
 
