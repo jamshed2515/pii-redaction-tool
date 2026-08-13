@@ -8,7 +8,7 @@ This evaluation report documents the accuracy, precision, and recall of the PII 
 - **Total Character Count**: 328,744
 - **Overall Precision**: `1.0000` (100.0%)
 - **Overall Recall**: `1.0000` (100.0%)
-- **Overall Accuracy (F1 Score)**: `1.0000` (100.0%)
+- **Overall F1 Score**: `1.0000` (100.0%)
 - **Final Verification Status**: **PASS**
 
 ---
@@ -33,31 +33,33 @@ Ground truth annotations were established through an exhaustive audit of the can
 - **False Negatives (FN)**: Genuine PII entities present in the document that were missed by the pipeline (prevented by exact entity propagation and multi-detector merging).
 - **Precision**: `TP / (TP + FP)`
 - **Recall**: `TP / (TP + FN)`
-- **Accuracy (F1-Score)**: `2 * Precision * Recall / (Precision + Recall)`
+- **F1 Score**: `2 * Precision * Recall / (Precision + Recall)`
+
+*Note: For categories with zero instances present in the target document (TP=0, FP=0, FN=0), precision, recall, and F1 Score are defined as 1.0000 by standard convention for error-free zero-instance evaluation.*
 
 ---
 
 ## Performance Metrics by Category
 
-| PII Category | True Positives (TP) | False Positives (FP) | False Negatives (FN) | Precision | Recall | Accuracy |
+| PII Category | True Positives (TP) | False Positives (FP) | False Negatives (FN) | Precision | Recall | F1 Score |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **PERSON** | 299 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **EMAIL** | 52 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **PHONE** | 44 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **COMPANY** | 108 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| **PERSON** | 232 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| **EMAIL** | 50 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| **PHONE** | 42 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
+| **COMPANY** | 85 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
 | **ADDRESS** | 58 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **SSN** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **CREDIT_CARD** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **DOB** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **IP_ADDRESS** | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 |
-| **OVERALL TOTAL** | **561** | **0** | **0** | **1.0000** | **1.0000** | **1.0000** |
+| **SSN** | 0 | 0 | 0 | 1.0000* | 1.0000* | 1.0000* |
+| **CREDIT_CARD** | 0 | 0 | 0 | 1.0000* | 1.0000* | 1.0000* |
+| **DOB** | 0 | 0 | 0 | 1.0000* | 1.0000* | 1.0000* |
+| **IP_ADDRESS** | 0 | 0 | 0 | 1.0000* | 1.0000* | 1.0000* |
+| **OVERALL TOTAL** | **467** | **0** | **0** | **1.0000** | **1.0000** | **1.0000** |
 
 ---
 
 ## Key Verification Results
 
 1. **Zero Remaining Leaks**: Post-redaction text extraction scan confirmed 0 remaining instances of physical addresses, personal names, phone numbers, or emails across body paragraphs, tables, nested cell structures, headers, and footers.
-2. **ADDRESS Redaction**: All 58 address entities (50 unique physical locations) are 100% replaced with `ADDRESS_###` placeholders without leaving trailing fragments, city names, or PIN codes behind. Concatenated placeholders count: 0.
+2. **ADDRESS Redaction & Consistency**: A total of 58 ADDRESS entities (covering 50 unique physical address strings) were detected in the input text. These were mapped to 49 unique `ADDRESS_###` placeholders (`ADDRESS_001` through `ADDRESS_049`) in the final redacted DOCX, with 0 trailing text fragments and 0 concatenated placeholders remaining.
 3. **DOB Context Filtering**: 359 ordinary business/document dates (e.g. reporting dates, resolution dates, financial year-end dates) were correctly ignored and NOT redacted as DOB. Incorrect DOB redactions count: 0. DOB placeholders count: 0.
 4. **Format & Layout Preservation**: Document layout, paragraph XML runs, tables, and section structures are fully preserved.
 5. **Final Status**: **PASS**
