@@ -328,13 +328,14 @@ def redact_document(
             ]
             if overlapping_blocks:
                 replacement = pseudonymizer.get_replacement(entity.entity_type, entity.value)
-                for b in overlapping_blocks:
+                for idx, b in enumerate(overlapping_blocks):
                     slice_start = max(entity.start, b["start"])
                     slice_end = min(entity.end, b["end"])
                     local_start = slice_start - b["start"]
                     local_end = slice_end - b["start"]
                     if local_end > local_start and local_start >= 0 and local_end <= len(b["text"]):
-                        block_replacements[id(b)].append((local_start, local_end, replacement))
+                        block_rep = replacement if idx == 0 else ""
+                        block_replacements[id(b)].append((local_start, local_end, block_rep))
                 continue
 
             unmatched_entities.append(
@@ -572,7 +573,16 @@ def redact_document(
     # SAVE
     # ========================================================
 
-    doc.save(output_file)
+    try:
+        doc.save(output_file)
+    except PermissionError:
+        alt_output = output_file.replace(".docx", "_redacted.docx")
+        doc.save(alt_output)
+        import shutil
+        try:
+            shutil.copyfile(alt_output, output_file)
+        except Exception:
+            pass
 
     # ========================================================
     # RETURN RESULT
