@@ -203,7 +203,12 @@ def looks_like_address(value):
     cleaned = value.strip()
     if not cleaned:
         return False
+    if len(cleaned) > 250:
+        return False
     lowered = cleaned.lower()
+
+    if any(w in lowered for w in ["jurisdiction", "regional director", "resolution", "conversion", "corporate identity", "certificate of incorporation", "provisions of", "companies act"]):
+        return False
 
     if lowered in LOCATION_WORDS or lowered in {"pune", "maharashtra", "india", "mumbai", "delhi", "ahmednagar"}:
         return False
@@ -242,7 +247,7 @@ def validate_entity(entity):
     # Never allow an entity to cross a newline.
     # ========================================================
 
-    if "\n" in value or "\r" in value:
+    if entity.entity_type != "ADDRESS" and ("\n" in value or "\r" in value):
         return False
 
     # ========================================================

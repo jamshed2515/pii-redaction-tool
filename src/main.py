@@ -233,6 +233,14 @@ for target in propagation_targets:
     for m in pattern.finditer(full_text):
         m_start = m.start()
         m_end = m.end()
+
+        # Expand company match to include trailing corporate suffix if present
+        if target_type == "COMPANY":
+            rest_text = full_text[m_end:]
+            suffix_match = re.match(r'^(?:\s+(?:Private\s+Limited|Limited|Ltd\.?|Pvt\.?\s+Ltd\.?|LLP|Inc\.?|Corporation))', rest_text, re.IGNORECASE)
+            if suffix_match:
+                m_end += suffix_match.end()
+
         m_val = full_text[m_start:m_end]
         
         cand = PIIEntity(

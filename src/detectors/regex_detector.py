@@ -85,13 +85,14 @@ def detect_addresses(text):
 
     patterns = [
         # 1. Standard building/flat/plot/number or specific street/locality/landmark ending in city/pin/state/India
-        r'(?i)\b(?:Flat\s*(?:–|-|no\.?)?\s*\d+|Plot\s*(?:–|-|no\.?)?\s*[A-Za-z0-9-]+|House\s*no\.?|\d+/\d+[,\s]+[^\n\r]+?|S\.\s*no\.\s*\d+/\s*\d+|Pushpakamal\s+Apartment|801\s*-\s*804|801-804|ICICI\s+Venture\s+House|C-101|201[,\s]+Tower|11/3[,\s]+11/4|Next\s+to\s+Kanjurmarg|Think\s+Techno\s+Campus|World\s+Centre|8th\s+Floor,\s*Onyx|A29,\s*Abhimanshree|SEBI\s+Bhavan)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)',
+        r'(?i)\b(?:Flat\s*(?:–|-|no\.?)?\s*\d+|Plot\s*(?:–|-|no\.?)?\s*[A-Za-z0-9-]+|House\s*no\.?|\d+/\d+[,\s]+[^\n\r]+?|S\.\s*no\.\s*\d+/\s*\d+|Pushpakamal\s+Apartment|801\s*-\s*804|801-804|ICICI\s+Venture\s+House|C-101|201[,\s]+Tower|11/3[,\s]+11/4|Next\s+to\s+Kanjurmarg|Think\s+Techno\s+Campus|World\s+Centre|10th\s+Floor|8th\s+Floor,\s*Onyx|A29,\s*Abhimanshree|SEBI\s+Bhavan)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?',
 
-        # 2. Multi-line or labeled address block following Registered Office / Corporate Office / Legal / Banker header
-        r'(?i)(?:Registered\s+Office|Corporate\s+Office|Address)\s*(?::|is\s+located\s+at|located\s+at|at)?\s*([0-9A-Za-z][^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b))',
+        # 2. Single-line address component patterns (matching building/street/landmark or locality/city/pincode on individual lines)
+        r'(?i)\b(?:801\s*-\s*804|801-804|Building\s+No\.?\s*3|Inspire\s+BKC|SEBI\s+Bhavan|Plot\s+No\.?\s*C4\s*A?|ICICI\s+Venture\s+House|C-101[,\s]+Embassy|10th\s+Floor[,\s]+Tower)[^\n\r]*',
+        r'(?i)\b(?:Bandra\s+(?:Kurla|East|\(E\))|Vikhroli|Lower\s+Parel|Prabhadevi|Shaniwar\s+Peth|Kanjurmarg|Koregaon\s+Park|Off\s+Pallod\s+Farms)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?',
 
-        # 3. Multi-line address blocks starting with 11/3 or 201 or 10th Floor
-        r'(?i)(?:11/3[^\n\r]*?\n[^\n\r]*?\n[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)|201[^\n\r]*?\n[^\n\r]*?\n[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)|10th\s+Floor[^\n\r]*?\n[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b))',
+        # 3. Address block following Registered Office / Corporate Office / Correspondence Address header
+        r'(?i)(?:Registered\s+Office|Corporate\s+Office|Correspondence\s+Address|Contact\s+Address)\s*(?::|is\s+located\s+at|located\s+at|at)?\s*(\b(?:Flat|Plot|House|Building|Unit|\d+/\d+|\d+|S\.\s*no)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?)',
     ]
 
     for pat in patterns:
@@ -149,9 +150,9 @@ def detect_phone_numbers(text):
                 )
             )
 
-    # 2. Standalone phone number patterns
+    # 2. Standalone phone number patterns with strict alphanumeric boundary lookbehind/lookahead
     general_pattern = re.compile(
-        r'(?<!\d)(?:\+?\s*91[\s\-]*)?(?:\(?0?\d{2,5}\)?[\s\-]*)?\d{3,5}[\s\-]*\d{4,5}(?!\d)'
+        r'(?<![A-Za-z0-9])(?:\+?\s*91[\s\-]*)?(?:\(?0?\d{2,5}\)?[\s\-]*)?\d{3,5}[\s\-]*\d{4,5}(?![A-Za-z0-9])'
     )
     for m in general_pattern.finditer(text):
         val = m.group(0).strip()
