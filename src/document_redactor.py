@@ -320,6 +320,20 @@ def redact_document(
         # ----------------------------------------------------
 
         if matched_block is None:
+            overlapping_blocks = [
+                b for b in document_blocks
+                if not (entity.end <= b["start"] or entity.start >= b["end"])
+            ]
+            if overlapping_blocks:
+                replacement = pseudonymizer.get_pseudonym(entity.value, entity.entity_type)
+                for b in overlapping_blocks:
+                    slice_start = max(entity.start, b["start"])
+                    slice_end = min(entity.end, b["end"])
+                    local_start = slice_start - b["start"]
+                    local_end = slice_end - b["start"]
+                    if local_end > local_start and local_start >= 0 and local_end <= len(b["text"]):
+                        block_replacements[id(b)].append((local_start, local_end, replacement))
+                continue
 
             unmatched_entities.append(
                 (

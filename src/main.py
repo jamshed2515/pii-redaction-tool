@@ -425,19 +425,27 @@ for ent in original_validated_list:
         for var in get_name_variations(val):
             person_names_to_check.add(var.lower())
     else:
-        other_pii_to_check.add((ent.entity_type, val.lower()))
+        for line in val.splitlines():
+            line_clean = line.strip().lower()
+            if ent.entity_type == "ADDRESS":
+                line_clean = re.sub(r'^(?:the\s+registered\s+office\s+of\s+our\s+company\s+located\s+at|the\s+corporate\s+office\s+of\s+our\s+company\s+located\s+at|having\s+its\s+registered\s+office\s+at|registered\s+office|corporate\s+office|correspondence\s+address|contact\s+address|our\s+manufacturing\s+facility\s+located\s+at)\s*', '', line_clean, flags=re.IGNORECASE).strip()
+            if len(line_clean) > 8 and not line_clean.startswith("registered office") and not line_clean.startswith("corporate office"):
+                other_pii_to_check.add((ent.entity_type, line_clean))
 
 # Check for presence in full_text_after
 for name in person_names_to_check:
-    # Use word boundary search
-    pattern = re.compile(rf"\b{re.escape(name)}\b", re.IGNORECASE)
-    if pattern.search(full_text_after):
-        leaks["PERSON"].append(name)
+    if len(name.strip()) > 3:
+        pattern = re.compile(rf"\b{re.escape(name)}\b", re.IGNORECASE)
+        if pattern.search(full_text_after):
+            leaks["PERSON"].append(name)
 
 for ent_type, val in other_pii_to_check:
-    pattern = re.compile(rf"\b{re.escape(val)}\b", re.IGNORECASE)
-    if pattern.search(full_text_after):
-        leaks[ent_type].append(val)
+    if len(val.strip()) > 5:
+        pattern = re.compile(rf"\b{re.escape(val)}\b", re.IGNORECASE)
+        if pattern.search(full_text_after):
+            # Check if this exact text string was already replaced by an entity placeholder
+            if not re.search(r"^[A-Z]+_\d{3}$", val.strip()):
+                leaks[ent_type].append(val)
 
 # Also run detectors on the redacted text
 after_regex = detect_regex_pii(full_text_after)

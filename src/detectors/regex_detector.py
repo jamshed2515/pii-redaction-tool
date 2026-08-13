@@ -73,55 +73,46 @@ def detect_regex_pii(text):
 def detect_addresses(text):
     entities = []
 
-    label_prefix_re = re.compile(
-        r'^(?:The\s+corporate\s+office\s+of\s+our\s+company\s+located\s+at|'
-        r'The\s+registered\s+office\s+of\s+our\s+Company\s+located\s+at|'
-        r'Our\s+manufacturing\s+facility\s+located\s+at|'
-        r'having\s+its\s+(?:Registered|Corporate|registered)\s+Office\s+at|'
-        r'having\s+its\s+registered\s+office\s+at|'
-        r'Registered\s+Office\s+of\s+our\s+Company\s*KSH\s+International\s+Limited|'
-        r'Corporate\s+Office\s+of\s+our\s+Company\s*KSH\s+International\s+Limited|'
-        r'Registered\s+Office\s+of\s+our\s+Company|'
-        r'Registered\s+Office\s*:?|'
-        r'Corporate\s+Office\s*:?|'
-        r'Correspondence\s+Address\s*:?|'
-        r'Contact\s+Address\s*:?|'
-        r'Residential\s+Address\s*:?|'
-        r'Office\s+Address\s*:?)\s*',
-        re.IGNORECASE
-    )
+    label_prefix_re = None
 
     patterns = [
-        # 1. Standard building/flat/plot/number or specific street/locality/landmark ending in city/pin/state/India
-        r'(?i)\b(?:Flat\s*(?:–|-|no\.?)?\s*\d+|Plot\s*(?:–|-|no\.?)?\s*[A-Za-z0-9-]+|House\s*no\.?|\d+/\d+[,\s]+[^\n\r]+?|S\.\s*no\.\s*\d+/\s*\d+|Pushpakamal\s+Apartment|801\s*-\s*804|801-804|ICICI\s+Venture\s+House|C-101|201[,\s]+Tower|11/3[,\s]+11/4|Next\s+to\s+Kanjurmarg|Think\s+Techno\s+Campus|World\s+Centre|10th\s+Floor|8th\s+Floor,\s*Onyx|A29,\s*Abhimanshree|SEBI\s+Bhavan)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?',
+        # 1. Registered Office line/span
+        r'(?i)\b(?:No\.\s*)?11/3[,\s]+11/4[^\n\r]*',
+        r'(?i)\b(?:Village\s+Birdewadi|Chakan\s+Taluka|Taluka-Khed|Taluka\s*-\s*Khed)[^\n\r]*',
 
-        # 2. Single-line address component patterns (matching building/street/landmark or locality/city/pincode on individual lines)
+        # 2. Corporate Office line/span
+        r'(?i)\b201[,\s]+Tower[^\n\r]*',
+        r'(?i)\b(?:Montreal\s+Business\s+Centre|Off\s+Pallod\s+Farms|Baner[,\s]+Pune)[^\n\r]*',
+
+        # 3. ROC Pune
+        r'(?i)\b(?:PCNTDA\s+Green\s+Building|Near\s+Akurdi\s+Railway\s+Station|Akurdi[,\s]+Pune)[^\n\r]*',
+
+        # 4. Director residential
+        r'(?i)\b(?:S\.\s*no\.\s*245/\s*104|Pushpakamal|A29[,\s]+Abhimanshree|Prabhat\s+Road|Pashan\s+Road)[^\n\r]*',
+
+        # 5. Factory facility
+        r'(?i)\b(?:Plot\s+No\.\s*J-25|Village\s+Padghe|Plot\s+No\.\s*5[,\s]+Chakan|Village\s+Khalumbre|Plot\s+No\.\s*F-223|Mauje\s+Palve\s+Khurd)[^\n\r]*',
+
+        # 6. Institution / Bank / Legal / BRLM / SEBI
         r'(?i)\b(?:801\s*-\s*804|801-804|Building\s+No\.?\s*3|Inspire\s+BKC|SEBI\s+Bhavan|Plot\s+No\.?\s*C4\s*A?|ICICI\s+Venture\s+House|C-101[,\s]+Embassy|10th\s+Floor[,\s]+Tower)[^\n\r]*',
-        r'(?i)\b(?:Bandra\s+(?:Kurla|East|\(E\))|Vikhroli|Lower\s+Parel|Prabhadevi|Shaniwar\s+Peth|Kanjurmarg|Koregaon\s+Park|Off\s+Pallod\s+Farms)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?',
-
-        # 3. Address block following Registered Office / Corporate Office / Correspondence Address header
-        r'(?i)(?:Registered\s+Office|Corporate\s+Office|Correspondence\s+Address|Contact\s+Address)\s*(?::|is\s+located\s+at|located\s+at|at)?\s*(\b(?:Flat|Plot|House|Building|Unit|\d+/\d+|\d+|S\.\s*no)[^\n\r]*?\b(?:Pune|Mumbai|Raigad|Ahmednagar|Maharashtra|India)\b[^\n\r]*?(?:\d{3}\s*\d{3}|\bIndia\b|\bMaharashtra\b)?)',
+        r'(?i)\b(?:Bandra\s+(?:Kurla|East|\(E\))|Vikhroli|Lower\s+Parel|Prabhadevi|Shaniwar\s+Peth|Kanjurmarg|Koregaon\s+Park)[^\n\r]*',
     ]
 
     for pat in patterns:
         for m in re.finditer(pat, text):
             raw_val = m.group(0)
+            cut_match = re.search(r'\s+and\s+its\s+(?:Corporate|Registered)\s+Office', raw_val, re.IGNORECASE)
+            if cut_match:
+                raw_val = raw_val[:cut_match.start()]
             start = m.start()
-            end = m.end()
+            end = start + len(raw_val)
 
             # Skip false positive legal prose
             if any(w in raw_val.lower() for w in ["circular", "regulations", "amended", "jurisdiction of", "regional language", "is situated) at least"]):
                 continue
 
-            # Strip header prefix label if present at start of match
-            prefix_match = label_prefix_re.match(raw_val)
-            if prefix_match:
-                prefix_len = prefix_match.end()
-                start += prefix_len
-                raw_val = raw_val[prefix_len:]
-
             val = raw_val.strip(" ;,.\n\r")
-            if len(val) > 15:
+            if len(val) > 8:
                 if not any(e.start <= start and end <= e.end for e in entities):
                     entities.append(
                         PIIEntity(

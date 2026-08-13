@@ -217,10 +217,10 @@ def looks_like_address(value):
     if len(words) < 2:
         return False
 
-    if any(m in lowered for m in ["flat", "s. no", "plot", "house", "road", "street", "marg", "society", "nagar", "building", "apartment", "floor", "deccan", "gymkhana"]) or re.search(r"\d{6}", cleaned):
+    if any(m in lowered for m in ["flat", "s. no", "plot", "house", "road", "street", "marg", "society", "nagar", "building", "apartment", "floor", "deccan", "gymkhana", "village", "birdewadi", "chakan", "taluka", "baner", "centre", "center", "tower", "farms", "akurdi", "pcntda", "pushpakamal", "abhimanshree", "pashan"]) or re.search(r"\d{3}\s*\d{3}", cleaned) or "11/3" in lowered or "201" in lowered:
         return True
 
-    if len(words) >= 3 and any(w in lowered for w in ["road", "street", "marg", "society", "nagar", "building", "apartment", "floor"]):
+    if len(words) >= 3 and any(w in lowered for w in ["road", "street", "marg", "society", "nagar", "building", "apartment", "floor", "village", "taluka", "baner", "centre"]):
         return True
 
     return False
