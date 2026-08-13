@@ -281,7 +281,16 @@ def validate_entity(entity):
     # ========================================================
 
     if entity.entity_type == "ADDRESS":
-        return looks_like_address(value)
+        match_prefix = re.search(
+            r'^(?:[,\s]*India)?\s*(?:and\s+its\s+)?(?:the\s+registered\s+office\s+of\s+our\s+company\s+located\s+at|the\s+corporate\s+office\s+of\s+our\s+company\s+located\s+at|having\s+its\s+registered\s+office\s+at|registered\s+office:?|corporate\s+office:?|correspondence\s+address:?|contact\s+address:?|our\s+manufacturing\s+facility\s+located\s+at)\s*(?:at\s+)?',
+            entity.value,
+            re.IGNORECASE
+        )
+        if match_prefix and match_prefix.end() > 0 and match_prefix.end() < len(entity.value):
+            prefix_len = match_prefix.end()
+            entity.start += prefix_len
+            entity.value = entity.value[prefix_len:].strip()
+        return looks_like_address(entity.value)
 
     if entity.entity_type == "DOB":
         return looks_like_dob(value)

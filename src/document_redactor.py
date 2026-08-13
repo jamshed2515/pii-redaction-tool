@@ -1,3 +1,5 @@
+import re
+
 # ============================================================
 # RUN-AWARE TEXT REPLACEMENT
 # ============================================================
@@ -508,6 +510,63 @@ def redact_document(
         )
 
         successfully_applied += applied
+
+    # ========================================================
+    # REPEATED ADDRESS PROPAGATION PASS
+    # ========================================================
+
+    address_pairs = []
+    for (e_type, orig_val), placeholder in replacement_map.items():
+        if e_type == "ADDRESS":
+            clean_str = re.sub(
+                r'^(?:[,\s]*India)?\s*(?:and\s+its\s+)?(?:the\s+registered\s+office\s+of\s+our\s+company\s+located\s+at|the\s+corporate\s+office\s+of\s+our\s+company\s+located\s+at|having\s+its\s+registered\s+office\s+at|registered\s+office:?|corporate\s+office:?|correspondence\s+address:?|contact\s+address:?|our\s+manufacturing\s+facility\s+located\s+at)\s*(?:at\s+)?',
+                '',
+                orig_val.strip(),
+                flags=re.IGNORECASE
+            ).strip(" :,.\n\r")
+            if len(clean_str) > 8:
+                address_pairs.append((clean_str, placeholder))
+
+    # Sort address pairs by length descending so longer addresses are replaced first
+    address_pairs.sort(key=lambda x: len(x[0]), reverse=True)
+
+    def process_p(p, target_str, placeholder):
+        if not p.text:
+            return 0
+        pattern = re.compile(re.escape(target_str), re.IGNORECASE)
+        matches = list(pattern.finditer(p.text))
+        if matches:
+            repls = [(m.start(), m.end(), placeholder) for m in matches]
+            return replace_text_in_paragraph(p, repls)
+        return 0
+
+    def process_table_obj(table, target_str, placeholder):
+        cnt = 0
+        for r in table.rows:
+            for c in r.cells:
+                for p in c.paragraphs:
+                    cnt += process_p(p, target_str, placeholder)
+                for nested_t in c.tables:
+                    cnt += process_table_obj(nested_t, target_str, placeholder)
+        return cnt
+
+    for clean_str, placeholder in address_pairs:
+        # Body paragraphs
+        for p in doc.paragraphs:
+            process_p(p, clean_str, placeholder)
+        # Tables & nested tables
+        for t in doc.tables:
+            process_table_obj(t, clean_str, placeholder)
+        # Headers & footers
+        for s in doc.sections:
+            for p in s.header.paragraphs:
+                process_p(p, clean_str, placeholder)
+            for t in s.header.tables:
+                process_table_obj(t, clean_str, placeholder)
+            for p in s.footer.paragraphs:
+                process_p(p, clean_str, placeholder)
+            for t in s.footer.tables:
+                process_table_obj(t, clean_str, placeholder)
 
     # ========================================================
     # SAVE
