@@ -77,8 +77,8 @@ def detect_addresses(text):
 
     patterns = [
         # 1. Registered Office line/span
-        r'(?i)\b(?:No\.\s*)?11/3[,\s]+11/4[^\n\r]*',
-        r'(?i)\b(?:Village\s+Birdewadi|Chakan\s+Taluka|Taluka-Khed|Taluka\s*-\s*Khed)[^\n\r]*',
+        r'(?i)\b(?:Gat\s+No\.?|Gat|No\.\s*)?11/3[,\s]+11/4[^\n\r]*',
+        r'(?i)\b(?:Village\s+Birdewadi|Chakan\s+Taluka|Taluka-Khed|Taluka\s*-\s*Khed|Taluka\s+Khed|District\s+Pune)[^\n\r]*',
 
         # 2. Corporate Office line/span
         r'(?i)\b201[,\s]+Tower[^\n\r]*',
@@ -87,13 +87,16 @@ def detect_addresses(text):
         # 3. ROC Pune
         r'(?i)\b(?:PCNTDA\s+Green\s+Building|Near\s+Akurdi\s+Railway\s+Station|Akurdi[,\s]+Pune)[^\n\r]*',
 
-        # 4. Director residential
-        r'(?i)\b(?:S\.\s*no\.\s*245/\s*104|Pushpakamal|A29[,\s]+Abhimanshree|Prabhat\s+Road|Pashan\s+Road)[^\n\r]*',
+        # 4. Director residential (Pushpakamal / Prabhat Road / Pashan Road / Abhimanshree / Bhandarkar Road / Panchvati)
+        r'(?i)\b(?:S\.\s*no\.\s*245/\s*104|Pushpakamal|A29[,\s]+Abhimanshree|Prabhat\s+Road|Pashan\s+Road|Bhandarkar\s+road|Panchvati|Pashan)[^\n\r]*',
 
         # 5. Factory facility
         r'(?i)\b(?:Plot\s+No\.\s*J-25|Village\s+Padghe|Plot\s+No\.\s*5[,\s]+Chakan|Village\s+Khalumbre|Plot\s+No\.\s*F-223|Mauje\s+Palve\s+Khurd)[^\n\r]*',
 
-        # 6. Institution / Bank / Legal / BRLM / SEBI
+        # 6. Standalone city/PIN code address lines
+        r'(?i)\b(?:Pune|Mumbai|Ahmednagar|Raigad|Maharashtra)\s*[–-]?\s*\d{3}\s*\d{3}\b[^\n\r]*',
+
+        # 7. Institution / Bank / Legal / BRLM / SEBI
         r'(?i)\b(?:801\s*-\s*804|801-804|Building\s+No\.?\s*3|Inspire\s+BKC|SEBI\s+Bhavan|Plot\s+No\.?\s*C4\s*A?|ICICI\s+Venture\s+House|C-101[,\s]+Embassy|10th\s+Floor[,\s]+Tower)[^\n\r]*',
         r'(?i)\b(?:Bandra\s+(?:Kurla|East|\(E\))|Vikhroli|Lower\s+Parel|Prabhadevi|Shaniwar\s+Peth|Kanjurmarg|Koregaon\s+Park)[^\n\r]*',
     ]
@@ -104,6 +107,9 @@ def detect_addresses(text):
             cut_match = re.search(r'\s+and\s+its\s+(?:Corporate|Registered)\s+Office', raw_val, re.IGNORECASE)
             if cut_match:
                 raw_val = raw_val[:cut_match.start()]
+            cut_comp = re.search(r',\s*(?:KSH\s+International\s+Limited|COMPANY_\d{3})', raw_val, re.IGNORECASE)
+            if cut_comp:
+                raw_val = raw_val[:cut_comp.start()]
             start = m.start()
             end = start + len(raw_val)
 

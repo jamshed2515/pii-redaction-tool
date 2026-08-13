@@ -272,7 +272,7 @@ def redact_document(
         # That is not a single PII value.
         # ----------------------------------------------------
 
-        if "\n" in entity.value or "\r" in entity.value:
+        if ("\n" in entity.value or "\r" in entity.value) and entity.entity_type != "ADDRESS":
 
             unmatched_entities.append(
                 (
@@ -325,7 +325,7 @@ def redact_document(
                 if not (entity.end <= b["start"] or entity.start >= b["end"])
             ]
             if overlapping_blocks:
-                replacement = pseudonymizer.get_pseudonym(entity.value, entity.entity_type)
+                replacement = pseudonymizer.get_replacement(entity.entity_type, entity.value)
                 for b in overlapping_blocks:
                     slice_start = max(entity.start, b["start"])
                     slice_end = min(entity.end, b["end"])

@@ -55,6 +55,6 @@ Ground truth annotations were established through an exhaustive audit of the can
 
 ## Key Verification Results
 
-1. **Zero Leaks**: The post-redaction scan confirmed zero remaining instances of any validated PII category.
-2. **Consistent Pseudonym Mapping**: All name variations (e.g. `Rakhi Girija Shetty` and `Rakhi Shetty`) resolve to the exact same pseudonym (`Aarav Sharma` or `PERSON_005`).
-3. **Format & Layout Preservation**: The document structure, paragraphs, table cells, nested tables, and header/footer elements were fully preserved.
+1. **Zero Leaks**: The post-redaction scan confirmed zero remaining instances of any physical addresses across body paragraphs, tables, nested cell structures, headers, and footers.
+2. **Consistent Pseudonym Mapping**: All address instances consistently map to `ADDRESS_###` placeholders without leaving trailing fragments, city names, or PIN codes behind.
+3. **Format & Layout Preservation**: Document layout, paragraph XML runs, tables, and section structures are fully preserved.
