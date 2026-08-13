@@ -121,7 +121,8 @@ print(
 # ============================================================
 
 validated_entities = validate_entities(
-    merged_entities
+    merged_entities,
+    full_text=full_text
 )
 
 print(

@@ -226,7 +226,7 @@ def looks_like_address(value):
     return False
 
 
-def looks_like_dob(value):
+def looks_like_dob(value, entity=None, full_text=None):
     cleaned = value.strip()
     if not cleaned:
         return False
@@ -234,10 +234,32 @@ def looks_like_dob(value):
         return False
     if len(cleaned) < 6:
         return False
-    return True
+
+    context = ""
+    if entity is not None and full_text:
+        ctx_start = max(0, entity.start - 100)
+        ctx_end = min(len(full_text), entity.end + 30)
+        context = full_text[ctx_start:ctx_end].lower()
+
+    explicit_dob_keywords = [
+        "date of birth",
+        "dob",
+        "d.o.b.",
+        "born",
+        "birth date",
+        "date of birth of",
+        "born on",
+        "birth:",
+    ]
+
+    for kw in explicit_dob_keywords:
+        if kw in context:
+            return True
+
+    return False
 
 
-def validate_entity(entity):
+def validate_entity(entity, full_text=None):
 
     value = entity.value.strip()
 
@@ -293,7 +315,7 @@ def validate_entity(entity):
         return looks_like_address(entity.value)
 
     if entity.entity_type == "DOB":
-        return looks_like_dob(value)
+        return looks_like_dob(value, entity=entity, full_text=full_text)
 
     # ========================================================
     # STRUCTURED PII
@@ -311,13 +333,13 @@ def validate_entity(entity):
     return False
 
 
-def validate_entities(entities):
+def validate_entities(entities, full_text=None):
 
     validated = []
 
     for entity in entities:
 
-        if validate_entity(entity):
+        if validate_entity(entity, full_text=full_text):
             validated.append(entity)
 
     return validated
