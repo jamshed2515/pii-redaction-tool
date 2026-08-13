@@ -531,13 +531,43 @@ def redact_document(
     # Sort address pairs by length descending so longer addresses are replaced first
     address_pairs.sort(key=lambda x: len(x[0]), reverse=True)
 
+    def expand_address_span_in_text(text, start, end):
+        if start < 0 or end > len(text) or start >= end:
+            return start, end
+        placeholder_matches = list(re.finditer(r'\b[A-Z]+_\d{3}\b', text))
+        new_start = start
+        left_limit = 0
+        for ph in placeholder_matches:
+            if ph.end() <= start:
+                left_limit = max(left_limit, ph.end())
+            elif ph.start() < start:
+                left_limit = max(left_limit, ph.end())
+        prefix = text[left_limit:start]
+        if not re.search(r'[:;\n\r]', prefix):
+            new_start = left_limit + (len(prefix) - len(prefix.lstrip(" \t\n\r,.:;")))
+
+        new_end = end
+        right_limit = len(text)
+        for ph in placeholder_matches:
+            if ph.start() >= end:
+                right_limit = min(right_limit, ph.start())
+                break
+        suffix = text[end:right_limit]
+        if not re.search(r'[:;\n\r]', suffix):
+            new_end = right_limit - (len(suffix) - len(suffix.rstrip(" \t\n\r,.:;")))
+
+        return new_start, new_end
+
     def process_p(p, target_str, placeholder):
         if not p.text:
             return 0
         pattern = re.compile(re.escape(target_str), re.IGNORECASE)
         matches = list(pattern.finditer(p.text))
         if matches:
-            repls = [(m.start(), m.end(), placeholder) for m in matches]
+            repls = []
+            for m in matches:
+                exp_s, exp_e = expand_address_span_in_text(p.text, m.start(), m.end())
+                repls.append((exp_s, exp_e, placeholder))
             return replace_text_in_paragraph(p, repls)
         return 0
 
