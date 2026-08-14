@@ -673,6 +673,13 @@ def redact_document(
             clean_address_paragraph_fragments(p)
 
     # ========================================================
+    # IMAGE REDACTION
+    # ========================================================
+
+    from image_redactor import redact_document_images
+    redact_document_images(doc)
+
+    # ========================================================
     # SAVE
     # ========================================================
 
