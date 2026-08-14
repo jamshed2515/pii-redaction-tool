@@ -5,6 +5,34 @@ import re
 # ============================================================
 
 
+def expand_address_span_in_text(text, start, end):
+    if start < 0 or end > len(text) or start >= end:
+        return start, end
+    placeholder_matches = list(re.finditer(r'\b[A-Z]+_\d{3}\b', text))
+    new_start = start
+    left_limit = 0
+    for ph in placeholder_matches:
+        if ph.end() <= start:
+            left_limit = max(left_limit, ph.end())
+        elif ph.start() < start:
+            left_limit = max(left_limit, ph.end())
+    prefix = text[left_limit:start]
+    if not re.search(r'[:;\n\r]', prefix):
+        new_start = left_limit + (len(prefix) - len(prefix.lstrip(" \t\n\r,.:;")))
+
+    new_end = end
+    right_limit = len(text)
+    for ph in placeholder_matches:
+        if ph.start() >= end:
+            right_limit = min(right_limit, ph.start())
+            break
+    suffix = text[end:right_limit]
+    if not re.search(r'[:;\n\r]', suffix):
+        new_end = right_limit - (len(suffix) - len(suffix.rstrip(" \t\n\r,.:;")))
+
+    return new_start, new_end
+
+
 def replace_text_in_paragraph(paragraph, replacements):
     """
     Replace entity spans while preserving Word run formatting.
@@ -19,7 +47,6 @@ def replace_text_in_paragraph(paragraph, replacements):
 
     Replacements are applied from right to left.
     """
-
     if not paragraph.runs:
         return 0
 
@@ -334,6 +361,8 @@ def redact_document(
                     local_start = slice_start - b["start"]
                     local_end = slice_end - b["start"]
                     if local_end > local_start and local_start >= 0 and local_end <= len(b["text"]):
+                        if entity.entity_type == "ADDRESS":
+                            local_start, local_end = expand_address_span_in_text(b["text"], local_start, local_end)
                         block_rep = replacement if idx == 0 else ""
                         block_replacements[id(b)].append((local_start, local_end, block_rep))
                 continue
@@ -442,6 +471,9 @@ def redact_document(
         # STORE REPLACEMENT
         # ====================================================
 
+        if entity.entity_type == "ADDRESS":
+            local_start, local_end = expand_address_span_in_text(matched_block["text"], local_start, local_end)
+
         block_replacements[
             id(matched_block)
         ].append(
@@ -531,33 +563,6 @@ def redact_document(
     # Sort address pairs by length descending so longer addresses are replaced first
     address_pairs.sort(key=lambda x: len(x[0]), reverse=True)
 
-    def expand_address_span_in_text(text, start, end):
-        if start < 0 or end > len(text) or start >= end:
-            return start, end
-        placeholder_matches = list(re.finditer(r'\b[A-Z]+_\d{3}\b', text))
-        new_start = start
-        left_limit = 0
-        for ph in placeholder_matches:
-            if ph.end() <= start:
-                left_limit = max(left_limit, ph.end())
-            elif ph.start() < start:
-                left_limit = max(left_limit, ph.end())
-        prefix = text[left_limit:start]
-        if not re.search(r'[:;\n\r]', prefix):
-            new_start = left_limit + (len(prefix) - len(prefix.lstrip(" \t\n\r,.:;")))
-
-        new_end = end
-        right_limit = len(text)
-        for ph in placeholder_matches:
-            if ph.start() >= end:
-                right_limit = min(right_limit, ph.start())
-                break
-        suffix = text[end:right_limit]
-        if not re.search(r'[:;\n\r]', suffix):
-            new_end = right_limit - (len(suffix) - len(suffix.rstrip(" \t\n\r,.:;")))
-
-        return new_start, new_end
-
     def process_p(p, target_str, placeholder):
         if not p.text:
             return 0
@@ -606,19 +611,32 @@ def redact_document(
     def clean_address_paragraph_fragments(p):
         if not p.text:
             return
+        placeholders = re.findall(r'\b[A-Z]+_\d{3}\b', p.text)
         if "ADDRESS_" in p.text:
-            placeholders = re.findall(r'\b[A-Z]+_\d{3}\b', p.text)
             if placeholders:
-                unique_placeholders = []
-                for ph in placeholders:
-                    if ph not in unique_placeholders:
-                        unique_placeholders.append(ph)
-
+                unique_placeholders = list(dict.fromkeys(placeholders))
                 text_without_placeholders = re.sub(r'\b[A-Z]+_\d{3}\b', '', p.text)
                 cleaned_remnants = re.sub(r'[\s,.\-:\n\r]', '', text_without_placeholders)
                 if len(cleaned_remnants) > 0:
                     new_p_text = ", ".join(unique_placeholders)
                     replace_text_in_paragraph(p, [(0, len(p.text), new_p_text)])
+        else:
+            lowered = p.text.lower()
+            address_keywords = [
+                "road", "street", "cantonment", "chambers", "unit", "wing", "floor",
+                "wakdewadi", "bkc", "building", "thimmayya", "kubera", "nagar",
+                "society", "colony", "complex", "plaza", "tower", "park", "industrial"
+            ]
+            if any(w in lowered for w in address_keywords):
+                text_without_placeholders = re.sub(r'\b[A-Z]+_\d{3}\b', '', p.text)
+                cleaned_remnants = re.sub(r'[\s,.\-:\n\r]', '', text_without_placeholders)
+                if len(cleaned_remnants) > 0:
+                    if placeholders:
+                        unique_placeholders = list(dict.fromkeys(placeholders))
+                        new_p_text = ", ".join(unique_placeholders)
+                        replace_text_in_paragraph(p, [(0, len(p.text), new_p_text)])
+                    else:
+                        replace_text_in_paragraph(p, [(0, len(p.text), "")])
 
     for p in doc.paragraphs:
         clean_address_paragraph_fragments(p)
@@ -627,8 +645,23 @@ def redact_document(
         def clean_table(tbl):
             for r in tbl.rows:
                 for c in r.cells:
-                    for p in c.paragraphs:
-                        clean_address_paragraph_fragments(p)
+                    cell_has_addr = any("ADDRESS_" in p.text for p in c.paragraphs)
+                    if cell_has_addr:
+                        for p in c.paragraphs:
+                            if "ADDRESS_" in p.text:
+                                clean_address_paragraph_fragments(p)
+                            else:
+                                phs = re.findall(r'\b[A-Z]+_\d{3}\b', p.text)
+                                low = p.text.lower()
+                                if any(w in low for w in ["road", "street", "cantonment", "chambers", "unit", "wing", "floor", "wakdewadi", "bkc", "building", "thimmayya", "kubera"]):
+                                    if phs:
+                                        new_txt = ", ".join(dict.fromkeys(phs))
+                                        replace_text_in_paragraph(p, [(0, len(p.text), new_txt)])
+                                    else:
+                                        replace_text_in_paragraph(p, [(0, len(p.text), "")])
+                    else:
+                        for p in c.paragraphs:
+                            clean_address_paragraph_fragments(p)
                     for n_t in c.tables:
                         clean_table(n_t)
         clean_table(t)
