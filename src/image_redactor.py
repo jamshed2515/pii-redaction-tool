@@ -69,11 +69,11 @@ def redact_image_blob(image_blob, image_ref):
         # 6. Date of Birth value (06/05/2000): Covers y=435..488, x=30..240 (completely erases 06/05/2000)
         replace_field_text(draw, (30, 435, 240, 488), "DOB_001", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 7. Signature handwriting (Vishal Singh): Covers y=390..465, x=375..650 (completely erases handwritten signature Vishal Singh)
-        replace_field_text(draw, (375, 390, 650, 465), "[SIGNATURE]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
+        # 7. Signature handwriting (Vishal Singh): Covers y=390..465, x=375..630
+        replace_field_text(draw, (375, 390, 630, 465), "[SIGNATURE]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
 
-        # 8. Date stamp (06072020): x=810..960, y=400..450
-        replace_field_text(draw, (810, 400, 960, 450), "[STAMP_REDACTED]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
+        # 8. Date stamp (06072020): Covers x=635..755, y=405..455
+        replace_field_text(draw, (635, 405, 755, 455), "[STAMP_REDACTED]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
 
         # Back Card PII fields:
         # 9. Hindi Address text lines: y=595..725, x=30..520
