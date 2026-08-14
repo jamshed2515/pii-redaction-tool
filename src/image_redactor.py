@@ -30,7 +30,7 @@ def replace_field_text(draw, box, text, font, text_color=(15, 23, 42), fill_colo
     """
     draw.rectangle(box, fill=fill_color)
     x1, y1, x2, y2 = box
-    draw.text((x1 + 4, y1 + 2), text, fill=text_color, font=font)
+    draw.text((x1 + 6, y1 + 3), text, fill=text_color, font=font)
 
 
 def redact_image_blob(image_blob, image_ref):
@@ -51,36 +51,39 @@ def redact_image_blob(image_blob, image_ref):
 
     if "image4" in image_ref:
         # PAN Card (image4.png - 768 x 962)
-        # 1. Photograph: x=38..175, y=135..285
-        replace_field_text(draw, (38, 135, 175, 285), "[PHOTO]", font_small, text_color=(71, 85, 105), fill_color=(185, 210, 225))
+        # 1. Photograph: x=30..185, y=130..290
+        replace_field_text(draw, (30, 130, 185, 290), "[PHOTO]", font_small, text_color=(71, 85, 105), fill_color=(185, 210, 225))
 
-        # 2. PAN Number (NBWPS1951N): x=245..440, y=220..258
-        replace_field_text(draw, (245, 220, 440, 258), "PAN_001", font_large, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 2. PAN Number (NBWPS1951N): x=240..450, y=215..265
+        replace_field_text(draw, (240, 215, 450, 265), "PAN_001", font_large, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 3. QR Code: x=525..735, y=155..375
-        replace_field_text(draw, (525, 155, 735, 375), "[QR_REDACTED]", font_small, text_color=(71, 85, 105), fill_color=(185, 210, 225))
+        # 3. QR Code: x=510..755, y=135..390
+        replace_field_text(draw, (510, 135, 755, 390), "[QR_REDACTED]", font_small, text_color=(71, 85, 105), fill_color=(185, 210, 225))
 
-        # 4. Name value (VISHAL SINGH): BELOW 'नाम / Name' label at y=312..342
-        replace_field_text(draw, (35, 312, 260, 342), "PERSON_077", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 4. Name value (VISHAL SINGH): Covers y=298..345, x=30..350 (completely erases VISHAL SINGH)
+        replace_field_text(draw, (30, 298, 350, 345), "PERSON_077", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 5. Father's Name value (SUGRIV SINGH): BELOW 'पिता का नाम / Father's Name' label at y=378..408
-        replace_field_text(draw, (35, 378, 260, 408), "PERSON_078", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 5. Father's Name value (SUGRIV SINGH): Covers y=362..410, x=30..350 (completely erases SUGRIV SINGH)
+        replace_field_text(draw, (30, 362, 350, 410), "PERSON_078", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 6. Date of Birth value (06/05/2000): BELOW 'जन्म की तारीख / Date of Birth' label at y=465..492
-        replace_field_text(draw, (35, 465, 200, 492), "DOB_001", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 6. Date of Birth value (06/05/2000): Covers y=435..488, x=30..240 (completely erases 06/05/2000)
+        replace_field_text(draw, (30, 435, 240, 488), "DOB_001", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 7. Signature handwriting (Vishal Singh): ABOVE 'हस्ताक्षर / Signature' label at y=405..460
-        replace_field_text(draw, (425, 405, 630, 460), "[SIGNATURE]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
+        # 7. Signature handwriting (Vishal Singh): Covers y=390..465, x=375..650 (completely erases handwritten signature Vishal Singh)
+        replace_field_text(draw, (375, 390, 650, 465), "[SIGNATURE]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
+
+        # 8. Date stamp (06072020): x=810..960, y=400..450
+        replace_field_text(draw, (810, 400, 960, 450), "[STAMP_REDACTED]", font_small, text_color=(71, 85, 105), fill_color=(205, 230, 242))
 
         # Back Card PII fields:
-        # 8. Hindi Address text lines: BELOW header label at y=595..715
-        replace_field_text(draw, (35, 595, 500, 715), "ADDRESS_052", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 9. Hindi Address text lines: y=595..725, x=30..520
+        replace_field_text(draw, (30, 595, 520, 725), "ADDRESS_052", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 9. English Address text lines: BELOW header label at y=795..915
-        replace_field_text(draw, (35, 795, 580, 915), "ADDRESS_053", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 10. English Address text lines (Income Tax PAN Services Unit...): y=785..920, x=30..600
+        replace_field_text(draw, (30, 785, 600, 920), "ADDRESS_053", font_medium, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
-        # 10. Tel & Email lines: at y=920..958
-        replace_field_text(draw, (35, 920, 580, 958), "PHONE_031  EMAIL_026", font_small, text_color=(15, 23, 42), fill_color=(205, 230, 242))
+        # 11. Tel & Email lines: y=920..960, x=30..600
+        replace_field_text(draw, (30, 920, 600, 960), "PHONE_031  EMAIL_026", font_small, text_color=(15, 23, 42), fill_color=(205, 230, 242))
 
         redacted = True
 
